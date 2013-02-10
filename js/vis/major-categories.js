@@ -7,37 +7,68 @@
     return MajorCategories = (function() {
 
       function MajorCategories(el) {
+        var extra;
         this.el = el;
         this.loadData = __bind(this.loadData, this);
 
-        this.svg = this.el.append("svg").attr("width", 600).attr("height", 500);
+        this.size = this.el;
+        this.el.style("height", window.innerHeight);
+        this.elHeight = window.innerHeight;
+        extra = Math.round((window.innerWidth - 964) / 2) + 30;
+        if (extra < 0) {
+          extra = 0;
+        }
+        this.svg = this.el.append("svg").attr("width", 564 + extra).attr("height", this.elHeight);
         this.loadData();
       }
 
       MajorCategories.prototype.loadData = function() {
         var _this = this;
-        return d3.json("data/minors.json", function(err, json) {
-          var bubble, diameter, force, node, tick;
+        return d3.json("data/majors.json", function(err, json) {
+          var diameter, force, linksArr, node, tick, _i, _ref, _results;
           if (err) {
             throw err;
           }
           diameter = 10;
           json = json.map(function(a) {
-            return {
+            var obj;
+            obj = {
               name: a.name,
               value: a.value,
-              radius: a.value / 400,
-              x: 250,
-              y: 250
+              radius: a.value / 300
             };
+            if (obj.value === 86519) {
+              obj.fixed = true;
+              obj.x = 664;
+              obj.y = _this.elHeight / 2;
+            }
+            return obj;
           });
           tick = function() {
             return node.attr("transform", function(d) {
               return "translate(" + d.x + "," + d.y + ")";
             });
           };
-          force = d3.layout.force().size([500, 500]).on("tick", tick).charge(function(d) {
-            return -Math.pow(d.radius, 2.0) / 5;
+          linksArr = [];
+          (function() {
+            _results = [];
+            for (var _i = 1, _ref = json.length; 1 <= _ref ? _i < _ref : _i > _ref; 1 <= _ref ? _i++ : _i--){ _results.push(_i); }
+            return _results;
+          }).apply(this).forEach(function(i) {
+            return linksArr.push({
+              source: 0,
+              target: i
+            });
+          });
+          force = d3.layout.force().size([564, _this.elHeight]).on("tick", tick).linkDistance(function(d) {
+            console.log(d);
+            return 350;
+          }).links(linksArr).charge(function(d) {
+            if (d.value === 86519) {
+              return -(d.radius * 2);
+            } else {
+              return -(Math.pow(d.radius, 2));
+            }
           }).nodes(json);
           force.start();
           node = _this.svg.selectAll(".node").data(force.nodes());
@@ -45,24 +76,24 @@
           node.append("circle").attr("r", function(d) {
             console.log(d);
             return d.radius;
-          });
-          return;
-          bubble = d3.layout.pack().sort(function(a, b) {
-            return a.name - b.name;
-          }).size([600, 500]).padding(1.5);
-          node = _this.svg.selectAll(".node").data(bubble.nodes({
-            children: json
-          }).filter(function(d) {
-            return !d.children;
-          })).enter().append("g").attr("class", "node").attr("transform", function(d) {
-            console.log(d);
-            return "translate(" + d.x + "," + d.y + ")";
-          });
-          node.append("circle").attr("r", function(d) {
-            return d.r;
-          });
-          return node.append("text").attr("dy", ".3em").style("text-anchor", "middle").text(function(d) {
+          }).style("fill", "#ffffff");
+          node.append("text").attr("class", "label").attr("dy", function(d) {
+            if (d.radius < 20) {
+              return 5;
+            } else {
+              return 0;
+            }
+          }).attr("dx", function(d) {
+            return 0 - (d.radius + 10);
+          }).style("text-anchor", "end").text(function(d) {
             return d.name;
+          });
+          node.append("text").attr("class", "value").style("text-anchor", "middle").style("font-size", function(d) {
+            return d.radius / 1.5 + "px";
+          }).attr("dy", function(d) {
+            return d.radius / 4;
+          }).text(function(d) {
+            return (Math.round(d.value / 100) / 10) + "k";
           });
         });
       };

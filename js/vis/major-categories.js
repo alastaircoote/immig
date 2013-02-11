@@ -25,17 +25,19 @@
       MajorCategories.prototype.loadData = function() {
         var _this = this;
         return d3.json("data/majors.json", function(err, json) {
-          var diameter, force, linksArr, node, tick, _i, _ref, _results;
+          var diameter, force, linksArr, node, tick, _i, _j, _ref, _results, _results1;
           if (err) {
             throw err;
           }
           diameter = 10;
-          json = json.map(function(a) {
+          json = json.map(function(a, i) {
             var obj;
             obj = {
               name: a.name,
               value: a.value,
-              radius: a.value / 300
+              radius: a.value / 300,
+              x: 200,
+              y: 200 * i
             };
             if (obj.value === 86519) {
               obj.fixed = true;
@@ -70,8 +72,15 @@
               return -(Math.pow(d.radius, 2));
             }
           }).nodes(json);
-          force.start();
           node = _this.svg.selectAll(".node").data(force.nodes());
+          force.start();
+          (function() {
+            _results1 = [];
+            for (_j = 0; _j <= 50; _j++){ _results1.push(_j); }
+            return _results1;
+          }).apply(this).map(function(d) {
+            return force.tick();
+          });
           node.enter().append("g").attr("class", "node");
           node.append("circle").attr("r", function(d) {
             console.log(d);

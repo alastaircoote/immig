@@ -16,8 +16,8 @@ define ["d3"], (d3) ->
                 if err then throw err
                 diameter = 10
 
-                json = json.map (a) =>
-                    obj = {name:a.name, value: a.value,radius: a.value/300}
+                json = json.map (a,i) =>
+                    obj = {name:a.name, value: a.value,radius: a.value/300, x:200,y:200 * i}
                     if obj.value == 86519
                       obj.fixed = true
                       obj.x = 664
@@ -41,8 +41,14 @@ define ["d3"], (d3) ->
                       if d.value == 86519 then -(d.radius * 2) else -((Math.pow(d.radius,2))))
                     .nodes(json)
 
-                force.start()
+
                 node = @svg.selectAll(".node").data(force.nodes());
+
+                force.start()
+                [0..50].map (d) ->
+                  force.tick()
+                #force.stop()
+                
 
                 node.enter().append("g")
                   .attr("class", "node")

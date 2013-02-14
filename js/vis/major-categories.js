@@ -9,6 +9,10 @@
       function MajorCategories(el) {
         var extra;
         this.el = el;
+        this.scroll = __bind(this.scroll, this);
+
+        this.draw = __bind(this.draw, this);
+
         this.loadData = __bind(this.loadData, this);
 
         this.size = this.el;
@@ -18,93 +22,97 @@
         if (extra < 0) {
           extra = 0;
         }
-        this.svg = this.el.append("svg").attr("width", 564 + extra).attr("height", this.elHeight);
-        this.loadData();
+        this.svg = this.el.append("svg").attr("width", 1500).attr("height", 650);
+        this.loadData(this.draw);
+        window.addEventListener("scroll", this.scroll);
       }
 
-      MajorCategories.prototype.loadData = function() {
+      MajorCategories.prototype.loadData = function(cb) {
         var _this = this;
         return d3.json("data/majors.json", function(err, json) {
-          var diameter, force, linksArr, node, tick, _i, _j, _ref, _results, _results1;
           if (err) {
             throw err;
           }
-          diameter = 10;
-          json = json.map(function(a, i) {
-            var obj;
-            obj = {
-              name: a.name,
-              value: a.value,
-              radius: a.value / 300,
-              x: 200,
-              y: 200 * i
-            };
-            if (obj.value === 86519) {
-              obj.fixed = true;
-              obj.x = 664;
-              obj.y = _this.elHeight / 2;
-            }
-            return obj;
+          json.forEach(function(a, i) {
+            return a.radius = a.value / 300;
           });
-          tick = function() {
-            return node.attr("transform", function(d) {
-              return "translate(" + d.x + "," + d.y + ")";
-            });
-          };
-          linksArr = [];
-          (function() {
-            _results = [];
-            for (var _i = 1, _ref = json.length; 1 <= _ref ? _i < _ref : _i > _ref; 1 <= _ref ? _i++ : _i--){ _results.push(_i); }
-            return _results;
-          }).apply(this).forEach(function(i) {
-            return linksArr.push({
-              source: 0,
-              target: i
-            });
-          });
-          force = d3.layout.force().size([564, _this.elHeight]).on("tick", tick).linkDistance(function(d) {
-            console.log(d);
-            return 350;
-          }).links(linksArr).charge(function(d) {
-            if (d.value === 86519) {
-              return -(d.radius * 2);
-            } else {
-              return -(Math.pow(d.radius, 2));
-            }
-          }).nodes(json);
-          node = _this.svg.selectAll(".node").data(force.nodes());
-          force.start();
-          (function() {
-            _results1 = [];
-            for (_j = 0; _j <= 50; _j++){ _results1.push(_j); }
-            return _results1;
-          }).apply(this).map(function(d) {
-            return force.tick();
-          });
-          node.enter().append("g").attr("class", "node");
-          node.append("circle").attr("r", function(d) {
-            console.log(d);
-            return d.radius;
-          }).style("fill", "#ffffff");
-          node.append("text").attr("class", "label").attr("dy", function(d) {
-            if (d.radius < 20) {
-              return 5;
-            } else {
-              return 0;
-            }
-          }).attr("dx", function(d) {
-            return 0 - (d.radius + 10);
-          }).style("text-anchor", "end").text(function(d) {
-            return d.name;
-          });
-          node.append("text").attr("class", "value").style("text-anchor", "middle").style("font-size", function(d) {
-            return d.radius / 1.5 + "px";
-          }).attr("dy", function(d) {
-            return d.radius / 4;
-          }).text(function(d) {
-            return (Math.round(d.value / 100) / 10) + "k";
-          });
+          _this.data = json;
+          return cb();
         });
+      };
+
+      MajorCategories.prototype.draw = function() {
+        var bigOne, first, groups,
+          _this = this;
+        first = this.data.splice(0, 1)[0];
+        console.log(first);
+        bigOne = this.svg.append("g").attr("class", "major").attr("transform", "translate(" + first.x + "," + first.y + ")");
+        bigOne.append("circle").attr("r", first.radius);
+        bigOne.append("text").attr("class", "value").style("font-size", "70px").style("text-anchor", "start").attr("dx", -260).attr("dy", -10).text(this.roundValue(first.value));
+        this.bigLabel = bigOne.append("text").attr("class", "label").attr("dx", -245).attr("dy", 10);
+        this.bigLabel.append("tspan").text("Computer And");
+        this.bigLabel.append("tspan").text("Mathematical").attr("dy", "1em").attr("dx", -104);
+        groups = this.svg.selectAll(".major").data(this.data).enter().append("g").attr("class", "major").attr("transform", function(d) {
+          return "translate(" + d.x + "," + d.y + ")";
+        });
+        this.circles = groups.append("circle").attr("r", function(d) {
+          return d.radius;
+        });
+        this.nameLabels = groups.append("text").attr("class", "label").attr("dy", function(d) {
+          if (d.radius < 20) {
+            return 5;
+          } else {
+            return 0;
+          }
+        }).attr("dx", function(d) {
+          return 0 - (d.radius + 10);
+        }).style("text-anchor", "end").attr("width", 200).each(function(d, i) {
+          var txt;
+          if (i !== 3) {
+            return d3.select(this).text(d.name);
+          }
+          txt = d3.select(this);
+          txt.append("tspan").text("Healthcare Practitioners").attr("dx", 0 - (d.radius + 10)).attr("dy", -5).style("text-anchor", "end");
+          return txt.append("tspan").text("and Technical").attr("dy", 15).attr("dx", -100);
+        });
+        return this.valueLabels = groups.append("text").attr("class", "value").style("font-size", function(d) {
+          return d.radius / 1.5 + "px";
+        }).attr("dy", function(d) {
+          return d.radius / 4;
+        }).text(function(d) {
+          return _this.roundValue(d.value);
+        });
+      };
+
+      MajorCategories.prototype.roundValue = function(value) {
+        return (Math.round(value / 100) / 10) + "k";
+      };
+
+      MajorCategories.prototype.scroll = function(e) {
+        var newY, ratio, rotateY;
+        rotateY = 220;
+        newY = document.body.scrollTop - 100;
+        ratio = newY / rotateY;
+        if (ratio < 0) {
+          ratio = 0;
+        }
+        this.nameLabels.style("opacity", ratio);
+        return this.bigLabel.style("opacity", ratio);
+        /*
+                    rotate = 180 - (180 * (newY / rotateY))
+                    if rotate < 0 then rotate = 0
+                    console.log "rotate(" + rotate + "deg)"
+                    console.log @svg
+                    @svg.style("-webkit-transform", "rotate(" + (rotate) + "deg)")
+        
+                    targetIndividualRotate = 360 * 3 # 5 spins
+        
+                    step = targetIndividualRotate - (targetIndividualRotate * (newY / rotateY))
+                    if step < 0 then step = 0
+        
+                    @valueLabels.attr("transform","rotate(" + step + ")")
+        */
+
       };
 
       return MajorCategories;

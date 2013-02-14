@@ -3,76 +3,120 @@ define ["d3"], (d3) ->
         constructor: (@el) ->
             @size = @el
             @el.style "height", window.innerHeight
-            @elHeight = window.innerHeight
+            @elHeight = window.innerHeight 
 
             extra = Math.round((window.innerWidth - 964) / 2) + 30
             if extra < 0 then extra = 0
             @svg = @el.append("svg")
-                .attr("width", 564 + extra)
-                .attr("height", @elHeight)
-            @loadData()
-        loadData: () =>
+                .attr("width", 1500)
+                .attr("height", 650)
+            @loadData @draw
+            window.addEventListener "scroll", @scroll
+        loadData: (cb) =>
             d3.json "data/majors.json", (err, json) =>
                 if err then throw err
-                diameter = 10
+              
+                json.forEach (a,i) =>
+                    a.radius = a.value/300
+              
+                @data = json
+                cb()
 
-                json = json.map (a,i) =>
-                    obj = {name:a.name, value: a.value,radius: a.value/300, x:200,y:200 * i}
-                    if obj.value == 86519
-                      obj.fixed = true
-                      obj.x = 664
-                      obj.y = @elHeight / 2
-                    return obj
-                tick = () ->
-                    node.attr("transform", (d) ->  "translate(" + d.x + "," + d.y + ")" );
+        draw: () =>
 
-                linksArr = []
-                [1...json.length].forEach (i) ->
-                  linksArr.push {source:0,target:i}
-                  #if i > 1
-                    #linksArr.push {source:i, target: i-1}
+            first = @data.splice(0,1)[0]
+            console.log first
+            bigOne = @svg
+                .append("g")
+                .attr("class","major")
+                .attr("transform","translate(#{first.x},#{first.y})")
 
-                force = d3.layout.force()
-                    .size([564,@elHeight])
-                    .on("tick",tick)
-                    .linkDistance((d) -> console.log(d); return 350)
-                    .links(linksArr)
-                    .charge((d) -> 
-                      if d.value == 86519 then -(d.radius * 2) else -((Math.pow(d.radius,2))))
-                    .nodes(json)
+            bigOne.append("circle")
+                .attr("r", first.radius)
+
+            bigOne.append("text")
+                .attr("class","value")
+                .style("font-size", "70px")
+                .style("text-anchor", "start")
+                .attr("dx",-260)
+                .attr("dy", -10)
+                .text(@roundValue(first.value))
+
+            @bigLabel = bigOne.append("text")
+                .attr("class","label")
+                .attr("dx",-245)
+                .attr("dy",10)
+            
+            @bigLabel.append("tspan").text("Computer And")
+            @bigLabel.append("tspan").text("Mathematical")
+            .attr("dy","1em")
+            .attr("dx",-104)
 
 
-                node = @svg.selectAll(".node").data(force.nodes());
-
-                force.start()
-                [0..50].map (d) ->
-                  force.tick()
-                #force.stop()
+            groups = @svg.selectAll(".major")
+              .data(@data)
+              .enter()
+                .append("g")
+                  .attr("class","major")
+                  .attr("transform",(d) -> "translate(#{d.x},#{d.y})")
+          
+            @circles = groups.append("circle")
+              .attr("r", (d) -> d.radius)
+              
+            @nameLabels = groups.append("text")
+                .attr("class","label")
+                .attr("dy", (d) -> if d.radius < 20 then 5 else 0)
+                .attr("dx", (d) -> 0-(d.radius + 10))
+                .style("text-anchor", "end")
+                .attr("width",200)
                 
+                
+                .each (d,i) ->
+                    if i != 3 then return d3.select(this).text(d.name)
 
-                node.enter().append("g")
-                  .attr("class", "node")
+                    txt = d3.select(this)
+                    txt.append("tspan")
+                        .text("Healthcare Practitioners")
+                        .attr("dx",0-(d.radius + 10))
+                        .attr("dy",-5)
+                        .style("text-anchor","end")
+                    txt.append("tspan")
+                        .text("and Technical")
+                        .attr("dy",15)
+                        .attr("dx",-100)
+
+            @valueLabels = groups.append("text")
+              .attr("class","value")
+              .style("font-size", (d) -> d.radius / 1.5 + "px")
+              .attr("dy", (d) -> d.radius / 4)
+              .text((d) => @roundValue(d.value));
+
+        roundValue: (value) ->
+            (Math.round(value / 100) / 10) + "k"
+
+        scroll: (e) =>
+            rotateY = 220
+            newY = document.body.scrollTop - 100
 
 
-                node.append("circle")
-                  .attr("r", (d) -> console.log(d);return d.radius)
-                  .style("fill","#ffffff")
-                  #.attr("transform", (d) ->  "translate(" + 250 + "," + 250 + ")" );
+            ratio = (newY) / rotateY
+            if ratio < 0 then ratio = 0
 
-                node.append("text")
-                  .attr("class","label")
-                  .attr("dy", (d) -> if d.radius < 20 then 5 else 0)
-                  .attr("dx", (d) -> 0-(d.radius + 10))
-                  .style("text-anchor", "end")
-                  #.attr("transform","rotate(-10 20,0)")
-                  .text((d) -> return d.name );
+            @nameLabels.style("opacity",ratio)
+            @bigLabel.style("opacity",ratio)
 
-                node.append("text")
-                  .attr("class","value")
-                  .style("text-anchor", "middle")
-                  .style("font-size", (d) -> d.radius / 1.5 + "px")
-                  .attr("dy", (d) -> d.radius / 4)
-                  #.attr("transform","rotate(-20 20,0)")
-                  .text((d) -> return (Math.round(d.value / 100) / 10) + "k" );
+            ###
+            rotate = 180 - (180 * (newY / rotateY))
+            if rotate < 0 then rotate = 0
+            console.log "rotate(" + rotate + "deg)"
+            console.log @svg
+            @svg.style("-webkit-transform", "rotate(" + (rotate) + "deg)")
 
-                return
+            targetIndividualRotate = 360 * 3 # 5 spins
+
+            step = targetIndividualRotate - (targetIndividualRotate * (newY / rotateY))
+            if step < 0 then step = 0
+
+            @valueLabels.attr("transform","rotate(" + step + ")")
+            ###
+

@@ -1,7 +1,17 @@
 #major-categories {
+  position: relative;
 
+  svg {
+    margin-top: -90px;
+   /* -webkit-transform: scale(0.1);
+    opacity:0;
+    -webkit-transform-origin:664px 325px;
+    -webkit-transition-property: opacity, -webkit-transform;
+    -webkit-transition-duration: 1s;*/
+  }
   circle {
     stroke:#888;
+    fill:#fff;
 //    stroke-width:2;
   }
 
@@ -11,11 +21,13 @@
     text-transform:uppercase;
     font-weight: 300;
     font-size:12px;
+    opacity:0;
   }
 
   text.value {
     font-family: "Oswald";
     fill:#999;
     font-weight: 300;
+    text-anchor:middle;
   }
 }

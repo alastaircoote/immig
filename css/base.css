@@ -209,7 +209,8 @@ h3 {
   color: #aaaaaa;
 }
 #side {
-  width: 400px;
+  width: 360px;
+  padding-right: 40px;
   float: left;
 }
 #graphic-holder {
@@ -218,21 +219,36 @@ h3 {
 }
 p {
   font-family: "Crimson Text", serif;
-  font-size: 18px;
+  font-size: 22px;
   color: #333;
-  line-height: 24px;
+  line-height: 28px;
+}
+#major-categories {
+  position: relative;
+}
+#major-categories svg {
+  margin-top: -90px;
+  /* -webkit-transform: scale(0.1);
+    opacity:0;
+    -webkit-transform-origin:664px 325px;
+    -webkit-transition-property: opacity, -webkit-transform;
+    -webkit-transition-duration: 1s;*/
+
 }
 #major-categories circle {
   stroke: #888;
+  fill: #fff;
 }
 #major-categories text.label {
   font-family: "Montserrat";
   text-transform: uppercase;
   font-weight: 300;
   font-size: 12px;
+  opacity: 0;
 }
 #major-categories text.value {
   font-family: "Oswald";
   fill: #999;
   font-weight: 300;
+  text-anchor: middle;
 }

@@ -1,5 +1,5 @@
 [
-{"name":"Computer and Mathematical", "value": 86519, "x": 664, "y": 325},
+{"name":"Computer and Mathematical", "value": 86519, "x": 664, "y": 325, "isBig":true},
 {"name":"Business and Financial Operations", "value": 15068, "x": 413, "y": 52},
 {"name":"Architecture and Engineering", "value": 12532, "x":345, "y":156},
 {"name":"Life, Physical, and Social Science", "value": 8291, "x": 316, "y":244},

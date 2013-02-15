@@ -8,12 +8,33 @@
       }
     },
     paths: {
-      "d3": "//d3js.org/d3.v3.min"
+      "d3": "//d3js.org/d3.v3.min",
+      "jquery": "//code.jquery.com/jquery-1.9.1.min"
     }
   });
 
-  require(["d3", "vis/major-categories"], function(d3, MajorCategories) {
-    return new MajorCategories(d3.select("#major-categories"));
+  require(["d3", "vis/major-categories", "jquery"], function(d3, MajorCategories, $) {
+    var fixedTop, lastScrollBottom, majors;
+    majors = new MajorCategories($("#svg-holder"));
+    fixedTop = parseInt($("#svg-holder").css("top"), 10);
+    lastScrollBottom = 0;
+    $(window).on("scroll", function() {
+      var scrollBottom;
+      if ($(window).scrollTop() >= fixedTop) {
+        $("#svg-holder").addClass("fixed");
+      } else {
+        $("#svg-holder").removeClass("fixed");
+      }
+      scrollBottom = $(window).height() + $(window).scrollTop();
+      console.log(scrollBottom);
+      if (scrollBottom >= 800 && lastScrollBottom < 800) {
+        majors.show();
+      } else if (scrollBottom < 800 && lastScrollBottom >= 800) {
+        majors.hide("up");
+      }
+      return lastScrollBottom = scrollBottom;
+    });
+    return $(window).trigger("scroll");
   });
 
 }).call(this);

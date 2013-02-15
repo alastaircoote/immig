@@ -1,14 +1,26 @@
-#major-categories {
-  position: relative;
+@import "preboot.less";
 
-  svg {
-    margin-top: -90px;
-   /* -webkit-transform: scale(0.1);
-    opacity:0;
-    -webkit-transform-origin:664px 325px;
-    -webkit-transition-property: opacity, -webkit-transform;
-    -webkit-transition-duration: 1s;*/
+#major-categories {
+
+  display:none;
+
+  g {
+    position:relative;
+
+    div {
+      width: 200px;
+      height: 100px;
+      background: black;
+      position: absolute;
+      top:0px;
+      left:0px;
+    }
   }
+
+  &.visible {
+    display:block;
+  }
+
   circle {
     stroke:#888;
     fill:#fff;
@@ -21,7 +33,15 @@
     text-transform:uppercase;
     font-weight: 300;
     font-size:12px;
+    text-anchor: end;
     opacity:0;
+    .transition(opacity 1s);
+
+
+  }
+
+  &.visible-label text.label {
+    opacity:1;
   }
 
   text.value {

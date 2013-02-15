@@ -7,24 +7,29 @@
     return MajorCategories = (function() {
 
       function MajorCategories(el) {
-        var extra;
         this.el = el;
-        this.scroll = __bind(this.scroll, this);
+        this.onResize = __bind(this.onResize, this);
+
+        this.tick = __bind(this.tick, this);
+
+        this.hide = __bind(this.hide, this);
+
+        this.show = __bind(this.show, this);
+
+        this.createNameLabel = __bind(this.createNameLabel, this);
+
+        this.createValueLabel = __bind(this.createValueLabel, this);
+
+        this.createCircle = __bind(this.createCircle, this);
 
         this.draw = __bind(this.draw, this);
 
         this.loadData = __bind(this.loadData, this);
 
-        this.size = this.el;
-        this.el.style("height", window.innerHeight);
-        this.elHeight = window.innerHeight;
-        extra = Math.round((window.innerWidth - 964) / 2) + 30;
-        if (extra < 0) {
-          extra = 0;
-        }
-        this.svg = this.el.append("svg").attr("width", 1500).attr("height", 650);
+        this.svg = d3.select(this.el[0]).append("svg");
+        this.loaded = false;
+        this.showOnLoad = false;
         this.loadData(this.draw);
-        window.addEventListener("scroll", this.scroll);
       }
 
       MajorCategories.prototype.loadData = function(cb) {
@@ -34,85 +39,171 @@
             throw err;
           }
           json.forEach(function(a, i) {
-            return a.radius = a.value / 300;
+            a.radius = Math.sqrt(a.value) / 2;
+            a.targetX = a.x;
+            a.targetY = a.y;
+            if (a.isBig) {
+              a.sourceX = a.x + 500;
+              a.sourceY = a.y;
+              return;
+            }
+            a.sourceX = a.x - (Math.random() * 600);
+            if (a.y < 312) {
+              return a.sourceY = a.y - (Math.random() * 600);
+            } else {
+              return a.sourceY = a.y + (Math.random() * 600);
+            }
           });
           _this.data = json;
-          return cb();
+          _this.loaded = true;
+          cb();
+          if (_this.showOnLoad) {
+            return _this.show();
+          }
         });
       };
 
       MajorCategories.prototype.draw = function() {
-        var bigOne, first, groups,
+        var self,
           _this = this;
-        first = this.data.splice(0, 1)[0];
-        console.log(first);
-        bigOne = this.svg.append("g").attr("class", "major").attr("transform", "translate(" + first.x + "," + first.y + ")");
-        bigOne.append("circle").attr("r", first.radius);
-        bigOne.append("text").attr("class", "value").style("font-size", "70px").style("text-anchor", "start").attr("dx", -260).attr("dy", -10).text(this.roundValue(first.value));
-        this.bigLabel = bigOne.append("text").attr("class", "label").attr("dx", -245).attr("dy", 10);
-        this.bigLabel.append("tspan").text("Computer And");
-        this.bigLabel.append("tspan").text("Mathematical").attr("dy", "1em").attr("dx", -104);
-        groups = this.svg.selectAll(".major").data(this.data).enter().append("g").attr("class", "major").attr("transform", function(d) {
-          return "translate(" + d.x + "," + d.y + ")";
+        this.force = d3.layout.force().size([500, 400]).on("tick", function(e) {
+          return _this.groups.attr("transform", function(d) {
+            return "translate(" + d.x + "," + d.y + ")";
+          });
+        }).nodes(this.data).charge(function(d) {
+          return -Math.pow(d.radius, 2.0) / 6;
         });
-        this.circles = groups.append("circle").attr("r", function(d) {
-          return d.radius;
+        self = this;
+        this.baseG = this.svg.append("g").attr("id", "major-categories");
+        this.onResize();
+        return this.groups = this.baseG.selectAll(".major").data(this.data).enter().append("g").each(function(d) {
+          var g;
+          g = d3.select(this);
+          g.attr("class", "major");
+          g.attr("transform", function(d) {
+            return "translate(" + d.x + "," + d.y + ")";
+          });
+          self.createCircle(d, g);
+          self.createValueLabel(d, g);
+          return self.createNameLabel(d, g);
         });
-        this.nameLabels = groups.append("text").attr("class", "label").attr("dy", function(d) {
-          if (d.radius < 20) {
-            return 5;
-          } else {
-            return 0;
-          }
-        }).attr("dx", function(d) {
-          return 0 - (d.radius + 10);
-        }).style("text-anchor", "end").attr("width", 200).each(function(d, i) {
-          var txt;
-          if (i !== 3) {
-            return d3.select(this).text(d.name);
-          }
-          txt = d3.select(this);
-          txt.append("tspan").text("Healthcare Practitioners").attr("dx", 0 - (d.radius + 10)).attr("dy", -5).style("text-anchor", "end");
-          return txt.append("tspan").text("and Technical").attr("dy", 15).attr("dx", -100);
-        });
-        return this.valueLabels = groups.append("text").attr("class", "value").style("font-size", function(d) {
-          return d.radius / 1.5 + "px";
-        }).attr("dy", function(d) {
-          return d.radius / 4;
-        }).text(function(d) {
+      };
+
+      MajorCategories.prototype.createCircle = function(d, g) {
+        return g.append("circle").attr("r", d.radius);
+      };
+
+      MajorCategories.prototype.createValueLabel = function(d, g) {
+        var text,
+          _this = this;
+        text = g.append("text").attr("class", "value").text(function(d) {
           return _this.roundValue(d.value);
         });
+        if (d.isBig && 1 === 2) {
+          return text.style("font-size", "70px").style("text-anchor", "start").attr("dx", -260).attr("dy", -10);
+        } else {
+          return text.style("font-size", function(d) {
+            return d.radius / 2 + "px";
+          }).attr("dy", function(d) {
+            return d.radius / 4;
+          });
+        }
+      };
+
+      MajorCategories.prototype.createNameLabel = function(d, g) {
+        var text,
+          _this = this;
+        text = g.append("text").attr("class", "label");
+        if (d.isBig) {
+          text.attr("dx", -140).attr("dy", 10);
+          text.append("tspan").text("Computer And");
+          text.append("tspan").text("Mathematical").attr("dy", "1em").attr("dx", -104);
+          return;
+        }
+        if (d.name === "Healthcare Practitioners and Technical") {
+          text.append("tspan").text("Healthcare Practitioners").attr("dx", 0 - (d.radius + 10)).attr("dy", -5).style("text-anchor", "end");
+          return text.append("tspan").text("and Technical").attr("dy", 15).attr("dx", -100);
+        } else {
+          return text.attr("dy", function(d) {
+            if (d.radius < 20) {
+              return 5;
+            } else {
+              return 0;
+            }
+          }).attr("dx", function(d) {
+            return 0 - (d.radius + 10);
+          }).text(function(d) {
+            return d.name;
+          });
+        }
+      };
+
+      MajorCategories.prototype.show = function() {
+        if (!this.loaded) {
+          return this.showOnLoad = true;
+        }
+        this.baseG.attr("class", "visible");
+        return this.force.start();
+        this.currentTransition = "show";
+        this.data.forEach(function(d) {
+          d.currentTargetX = d.targetX;
+          d.currentTargetY = d.targetY;
+          d.x = d.sourceX;
+          return d.y = d.sourceY;
+        });
+        return this.force.start();
+      };
+
+      MajorCategories.prototype.hide = function() {
+        this.currentTransition = "hide";
+        this.data.forEach(function(d) {
+          d.currentTargetX = d.sourceX;
+          d.currentTargetY = d.sourceY;
+          d.x = d.targetX;
+          return d.y = d.targetY;
+        });
+        return this.force.start();
       };
 
       MajorCategories.prototype.roundValue = function(value) {
         return (Math.round(value / 100) / 10) + "k";
       };
 
-      MajorCategories.prototype.scroll = function(e) {
-        var newY, ratio, rotateY;
-        rotateY = 220;
-        newY = document.body.scrollTop - 100;
-        ratio = newY / rotateY;
-        if (ratio < 0) {
-          ratio = 0;
+      MajorCategories.prototype.tick = function(e) {
+        var _this = this;
+        this.groups.each(function(d) {
+          var targetX, targetY;
+          targetY = 100;
+          targetX = 300;
+          d.x = d.x + (d.currentTargetX - d.x) * e.alpha * 1.1;
+          return d.y = d.y + (d.currentTargetY - d.y) * e.alpha * 1.1;
+        });
+        this.groups.attr("transform", function(d) {
+          return "translate(" + d.x + "," + d.y + ")";
+        });
+        this.groups.style("opacity", function(d) {
+          if (_this.currentTransition === "show") {
+            return d.x / d.currentTargetX;
+          } else {
+            return 0.7 - (d.x / d.currentTargetX);
+          }
+        });
+        if (e.alpha < 0.05) {
+          if (this.currentTransition === "show") {
+            return this.baseG.attr("class", "visible visible-label");
+          } else {
+            return this.baseG.attr("class", "visible");
+          }
         }
-        this.nameLabels.style("opacity", ratio);
-        return this.bigLabel.style("opacity", ratio);
-        /*
-                    rotate = 180 - (180 * (newY / rotateY))
-                    if rotate < 0 then rotate = 0
-                    console.log "rotate(" + rotate + "deg)"
-                    console.log @svg
-                    @svg.style("-webkit-transform", "rotate(" + (rotate) + "deg)")
-        
-                    targetIndividualRotate = 360 * 3 # 5 spins
-        
-                    step = targetIndividualRotate - (targetIndividualRotate * (newY / rotateY))
-                    if step < 0 then step = 0
-        
-                    @valueLabels.attr("transform","rotate(" + step + ")")
-        */
+      };
 
+      MajorCategories.prototype.onResize = function() {
+        var middle, rightSide, x, y;
+        y = 20;
+        middle = this.el.width() / 2;
+        rightSide = middle + 512;
+        x = rightSide - 610;
+        return this.baseG.attr("transform", "translate(" + x + "," + y + ")");
       };
 
       return MajorCategories;

@@ -8,6 +8,8 @@
 
       function MajorCategories(el) {
         this.el = el;
+        this.setPosition = __bind(this.setPosition, this);
+
         this.onResize = __bind(this.onResize, this);
 
         this.tick = __bind(this.tick, this);
@@ -29,7 +31,9 @@
         this.svg = d3.select(this.el[0]).append("svg");
         this.loaded = false;
         this.showOnLoad = false;
+        this.onResize();
         this.loadData(this.draw);
+        $(window).on("resize", this.onResize);
       }
 
       MajorCategories.prototype.loadData = function(cb) {
@@ -40,19 +44,9 @@
           }
           json.forEach(function(a, i) {
             a.radius = Math.sqrt(a.value) / 2;
-            a.targetX = a.x;
-            a.targetY = a.y;
-            if (a.isBig) {
-              a.sourceX = a.x + 500;
-              a.sourceY = a.y;
-              return;
-            }
-            a.sourceX = a.x - (Math.random() * 600);
-            if (a.y < 312) {
-              return a.sourceY = a.y - (Math.random() * 600);
-            } else {
-              return a.sourceY = a.y + (Math.random() * 600);
-            }
+            a.x = _this.sourcePoint.x + (Math.random() * 60);
+            a.sourceX = a.x;
+            return delete a.y;
           });
           _this.data = json;
           _this.loaded = true;
@@ -64,17 +58,13 @@
       };
 
       MajorCategories.prototype.draw = function() {
-        var self,
-          _this = this;
-        this.force = d3.layout.force().size([500, 400]).on("tick", function(e) {
-          return _this.groups.attr("transform", function(d) {
-            return "translate(" + d.x + "," + d.y + ")";
-          });
-        }).nodes(this.data).charge(function(d) {
+        var self;
+        this.force = d3.layout.force().size([600, $(window).height()]).on("tick", this.tick).nodes(this.data).charge(function(d) {
           return -Math.pow(d.radius, 2.0) / 6;
         });
         self = this;
         this.baseG = this.svg.append("g").attr("id", "major-categories");
+        this.setPosition();
         this.onResize();
         return this.groups = this.baseG.selectAll(".major").data(this.data).enter().append("g").each(function(d) {
           var g;
@@ -105,63 +95,43 @@
           return text.style("font-size", function(d) {
             return d.radius / 2 + "px";
           }).attr("dy", function(d) {
-            return d.radius / 4;
+            return -(d.radius / 6);
           });
         }
       };
 
       MajorCategories.prototype.createNameLabel = function(d, g) {
-        var text,
-          _this = this;
-        text = g.append("text").attr("class", "label");
-        if (d.isBig) {
-          text.attr("dx", -140).attr("dy", 10);
-          text.append("tspan").text("Computer And");
-          text.append("tspan").text("Mathematical").attr("dy", "1em").attr("dx", -104);
-          return;
+        var text, tspan, word, wordSplit, _i, _len, _results;
+        text = g.append("text").attr("class", "label").style("font-size", function(d) {
+          return d.radius / 6 + "px";
+        }).attr("dy", function(d) {
+          return d.radius / 6;
+        });
+        wordSplit = d.name.split(" ");
+        _results = [];
+        for (_i = 0, _len = wordSplit.length; _i < _len; _i++) {
+          word = wordSplit[_i];
+          tspan = text.append("tspan").text(word + " ");
+          if (text[0][0].offsetWidth > d.radius * 1.5) {
+            tspan.attr("dy", "1em");
+            _results.push(tspan.attr("x", 0));
+          } else {
+            _results.push(void 0);
+          }
         }
-        if (d.name === "Healthcare Practitioners and Technical") {
-          text.append("tspan").text("Healthcare Practitioners").attr("dx", 0 - (d.radius + 10)).attr("dy", -5).style("text-anchor", "end");
-          return text.append("tspan").text("and Technical").attr("dy", 15).attr("dx", -100);
-        } else {
-          return text.attr("dy", function(d) {
-            if (d.radius < 20) {
-              return 5;
-            } else {
-              return 0;
-            }
-          }).attr("dx", function(d) {
-            return 0 - (d.radius + 10);
-          }).text(function(d) {
-            return d.name;
-          });
-        }
+        return _results;
       };
 
       MajorCategories.prototype.show = function() {
         if (!this.loaded) {
           return this.showOnLoad = true;
         }
-        this.baseG.attr("class", "visible");
-        return this.force.start();
         this.currentTransition = "show";
-        this.data.forEach(function(d) {
-          d.currentTargetX = d.targetX;
-          d.currentTargetY = d.targetY;
-          d.x = d.sourceX;
-          return d.y = d.sourceY;
-        });
         return this.force.start();
       };
 
       MajorCategories.prototype.hide = function() {
         this.currentTransition = "hide";
-        this.data.forEach(function(d) {
-          d.currentTargetX = d.sourceX;
-          d.currentTargetY = d.sourceY;
-          d.x = d.targetX;
-          return d.y = d.targetY;
-        });
         return this.force.start();
       };
 
@@ -171,30 +141,14 @@
 
       MajorCategories.prototype.tick = function(e) {
         var _this = this;
-        this.groups.each(function(d) {
-          var targetX, targetY;
-          targetY = 100;
-          targetX = 300;
-          d.x = d.x + (d.currentTargetX - d.x) * e.alpha * 1.1;
-          return d.y = d.y + (d.currentTargetY - d.y) * e.alpha * 1.1;
-        });
-        this.groups.attr("transform", function(d) {
+        if (this.currentTransition === "hide") {
+          this.groups.each(function(d, i) {
+            return d.x = d.x + (d.sourceX - d.x) * e.alpha * 1.1;
+          });
+        }
+        return this.groups.attr("transform", function(d) {
           return "translate(" + d.x + "," + d.y + ")";
         });
-        this.groups.style("opacity", function(d) {
-          if (_this.currentTransition === "show") {
-            return d.x / d.currentTargetX;
-          } else {
-            return 0.7 - (d.x / d.currentTargetX);
-          }
-        });
-        if (e.alpha < 0.05) {
-          if (this.currentTransition === "show") {
-            return this.baseG.attr("class", "visible visible-label");
-          } else {
-            return this.baseG.attr("class", "visible");
-          }
-        }
       };
 
       MajorCategories.prototype.onResize = function() {
@@ -203,7 +157,20 @@
         middle = this.el.width() / 2;
         rightSide = middle + 512;
         x = rightSide - 610;
-        return this.baseG.attr("transform", "translate(" + x + "," + y + ")");
+        console.log("newX", x);
+        this.setPosition(x, null);
+        return this.sourcePoint = {
+          x: $(window).width() + 100,
+          y: $(window).height() / 2
+        };
+      };
+
+      MajorCategories.prototype.setPosition = function(newLeft, newTop) {
+        this.left = newLeft || this.left || 0;
+        this.top = newTop || this.top || 0;
+        if (this.baseG) {
+          return this.baseG.attr("transform", "translate(" + this.left + "," + this.top + ")");
+        }
       };
 
       return MajorCategories;

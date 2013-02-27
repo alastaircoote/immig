@@ -9,17 +9,16 @@ requirejs.config
 require ["d3","vis/major-categories", "jquery"], (d3, MajorCategories, $) ->
     majors = new MajorCategories $("#svg-holder")
 
-    fixedTop = parseInt($("#svg-holder").css("top"),10)
+    fixedTop = 410
 
 
     lastScrollBottom = 0
 
     $(window).on "scroll", () ->
-        if $(window).scrollTop() >= fixedTop
-            $("#svg-holder").addClass("fixed")
-        else
-            $("#svg-holder").removeClass("fixed")
+        scrollTop = $(window).scrollTop()
 
+        if scrollTop < 410 then majors.setPosition(null, 410 - $(window).scrollTop())
+        else majors.setPosition(null, 0)
 
         scrollBottom = $(window).height() + $(window).scrollTop()
         console.log scrollBottom

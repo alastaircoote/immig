@@ -16,14 +16,15 @@
   require(["d3", "vis/major-categories", "jquery"], function(d3, MajorCategories, $) {
     var fixedTop, lastScrollBottom, majors;
     majors = new MajorCategories($("#svg-holder"));
-    fixedTop = parseInt($("#svg-holder").css("top"), 10);
+    fixedTop = 410;
     lastScrollBottom = 0;
     $(window).on("scroll", function() {
-      var scrollBottom;
-      if ($(window).scrollTop() >= fixedTop) {
-        $("#svg-holder").addClass("fixed");
+      var scrollBottom, scrollTop;
+      scrollTop = $(window).scrollTop();
+      if (scrollTop < 410) {
+        majors.setPosition(null, 410 - $(window).scrollTop());
       } else {
-        $("#svg-holder").removeClass("fixed");
+        majors.setPosition(null, 0);
       }
       scrollBottom = $(window).height() + $(window).scrollTop();
       console.log(scrollBottom);

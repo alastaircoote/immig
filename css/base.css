@@ -226,15 +226,11 @@ p {
   margin-bottom: 1em;
 }
 #svg-holder {
-  position: absolute;
-  top: 410px;
+  position: fixed;
+  top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-}
-#svg-holder.fixed {
-  position: fixed;
-  top: 0px;
 }
 #svg-holder svg {
   width: 100%;
@@ -464,9 +460,6 @@ p {
 #reset .reset-html5 section {
   display: block;
 }
-#major-categories {
-  display: none;
-}
 #major-categories g {
   position: relative;
 }
@@ -478,9 +471,6 @@ p {
   top: 0px;
   left: 0px;
 }
-#major-categories.visible {
-  display: block;
-}
 #major-categories circle {
   stroke: #888;
   fill: #fff;
@@ -490,11 +480,7 @@ p {
   text-transform: uppercase;
   font-weight: 300;
   font-size: 12px;
-  text-anchor: end;
-  opacity: 0;
-  -webkit-transition: opacity 1s;
-  -moz-transition: opacity 1s;
-  transition: opacity 1s;
+  text-anchor: middle;
 }
 #major-categories.visible-label text.label {
   opacity: 1;

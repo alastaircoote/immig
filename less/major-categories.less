@@ -15,11 +15,21 @@
       top:0px;
       left:0px;
     }
+
+    .overlabel {
+      visibility: hidden;
+    }
+
+    &.hover .overlabel {
+      visibility: visible;
+    }
+
   }
 
   circle {
     stroke:#888;
     fill:#fff;
+    cursor:pointer;
 //    stroke-width:2;
   }
 
@@ -30,6 +40,7 @@
     font-weight: 300;
     font-size:12px;
     text-anchor: middle;
+    cursor:pointer;
     //opacity:0;
     //.transition(opacity 1s);
 
@@ -44,5 +55,24 @@
     fill:#999;
     font-weight: 300;
     text-anchor:middle;
+    cursor:pointer;
   }
+
+  rect.overlabel {
+    width: 100px;
+    height: 100px;
+    fill: rgba(0,0,0,0.8);
+    z-index:1;
+  }
+
+  text.overlabel {
+    font-family: "Montserrat";
+    text-transform:uppercase;
+    font-weight: 300;
+    font-size:11px;
+    fill:#fff;
+    z-index:2;
+  }
+
+
 }

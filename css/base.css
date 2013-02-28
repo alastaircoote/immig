@@ -192,7 +192,6 @@ h2 {
   margin: 0;
   line-height: 35px;
   color: #333;
-  margin-bottom: 40px;
 }
 h2 .leader {
   display: block;
@@ -208,6 +207,7 @@ h3 {
   font-size: 30px;
   margin-bottom: 20px;
   color: #aaaaaa;
+  margin-top: 40px;
 }
 #side {
   width: 360px;
@@ -471,9 +471,16 @@ p {
   top: 0px;
   left: 0px;
 }
+#major-categories g .overlabel {
+  visibility: hidden;
+}
+#major-categories g.hover .overlabel {
+  visibility: visible;
+}
 #major-categories circle {
   stroke: #888;
   fill: #fff;
+  cursor: pointer;
 }
 #major-categories text.label {
   font-family: "Montserrat";
@@ -481,6 +488,7 @@ p {
   font-weight: 300;
   font-size: 12px;
   text-anchor: middle;
+  cursor: pointer;
 }
 #major-categories.visible-label text.label {
   opacity: 1;
@@ -490,4 +498,19 @@ p {
   fill: #999;
   font-weight: 300;
   text-anchor: middle;
+  cursor: pointer;
+}
+#major-categories rect.overlabel {
+  width: 100px;
+  height: 100px;
+  fill: rgba(0, 0, 0, 0.8);
+  z-index: 1;
+}
+#major-categories text.overlabel {
+  font-family: "Montserrat";
+  text-transform: uppercase;
+  font-weight: 300;
+  font-size: 11px;
+  fill: #fff;
+  z-index: 2;
 }

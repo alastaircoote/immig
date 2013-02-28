@@ -27,10 +27,11 @@
         majors.setPosition(null, 0);
       }
       scrollBottom = $(window).height() + $(window).scrollTop();
-      console.log(scrollBottom);
-      if (scrollBottom >= 800 && lastScrollBottom < 800) {
+      if (scrollBottom >= 800 && scrollBottom <= 1330) {
         majors.show();
       } else if (scrollBottom < 800 && lastScrollBottom >= 800) {
+        majors.hide();
+      } else if (scrollBottom > 1330 && lastScrollBottom <= 1330) {
         majors.hide("up");
       }
       return lastScrollBottom = scrollBottom;

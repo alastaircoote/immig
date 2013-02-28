@@ -19,6 +19,7 @@ define ["d3"], (d3) ->
                     a.radius = Math.sqrt(a.value) / 2 #a.value/300
                     a.x = @sourcePoint.x + (Math.random() * 60)
                     a.sourceX = a.x
+                    a.sourceY = @sourcePoint.y - $(window).height() - (Math.random() * 60)
                     delete a.y
 
 
@@ -56,9 +57,21 @@ define ["d3"], (d3) ->
                     self.createCircle(d,g)
                     self.createValueLabel(d,g)
                     self.createNameLabel(d,g)
+                    self.createOverLabel(d,g)
+
+            @hide()
 
         createCircle: (d, g) =>
-            g.append("circle").attr("r", d.radius)
+            g.append("circle")
+                .attr("r", d.radius)
+            g.on "mouseover", (e) =>
+
+                    # Ugly hack alert! Bring to front.
+                    @baseG[0][0].appendChild(g[0][0])
+                    
+                    g.attr("class", "major hover")
+            g.on "mouseout", (e) =>
+                    g.attr("class","major")
 
         createValueLabel: (d,g) =>
             text = g.append("text")
@@ -88,12 +101,39 @@ define ["d3"], (d3) ->
                     tspan.attr("dy", "1em")
                     tspan.attr("x", 0)
 
-        show: () =>
+        createOverLabel: (d,g) =>
+
+            rect = g.append("rect")
+                .attr("class","overlabel")
+                .attr("rx", 7)
+                .attr("ry", 7)
+                .attr("y", -(d.radius + 25))
+                .attr("height", 20)
+
+            text = g.append("text")
+                .attr("class","overlabel")
+                .text(d.name + " - " + @roundValue(d.value))
+                .attr("y", -(d.radius + 10))
+            
+            rectWidth = text[0][0].getComputedTextLength() + 28
+
+            rect
+                .attr("width",rectWidth)
+                .attr("x", -(rectWidth / 2))
+
+            text
+                .attr("x", -((rectWidth / 2)) + 14)
+
+            console.log(text[0][0].getComputedTextLength())
+
+        show: (t) =>
             if !@loaded then return @showOnLoad = true
-            @currentTransition = "show"
+            if @currentTransition == "show" then return
+            else @currentTransition = "show"
             return @force.start()
-        hide: () =>
-            @currentTransition = "hide"
+        hide: (t) =>
+            if t == "up" then @currentTransition = "hide-up"
+            else @currentTransition = "hide"
             @force.start()
 
         roundValue: (value) ->
@@ -105,6 +145,14 @@ define ["d3"], (d3) ->
             if @currentTransition == "hide"
                 @groups.each (d,i) =>
                     d.x = d.x + ( d.sourceX - d.x) * e.alpha * 1.1
+            
+            else if @currentTransition == "hide-up"
+                @groups.each (d,i) =>
+                    d.y = d.y + ( d.sourceY - d.y) * e.alpha * 1.1
+
+            else if @currentTransition == "show-down"
+                @groups.each (d,i) =>
+                    #d.y = d.y + ( d.sourceY - d.y) * e.alpha * 1.1
 
             @groups.attr "transform", (d) -> "translate(" +  d.x + "," + d.y + ")"
         onResize: () =>
@@ -112,7 +160,6 @@ define ["d3"], (d3) ->
             middle = @el.width() / 2
             rightSide = middle + 512 # #content is 1024px wide
             x = rightSide - 610 # Figure I just came up with
-            console.log "newX", x
             @setPosition(x,null)
 
             #if @baseG then @baseG.attr("transform","translate(#{x},#{y})")

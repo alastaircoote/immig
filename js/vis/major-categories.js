@@ -18,6 +18,8 @@
 
         this.show = __bind(this.show, this);
 
+        this.createOverLabel = __bind(this.createOverLabel, this);
+
         this.createNameLabel = __bind(this.createNameLabel, this);
 
         this.createValueLabel = __bind(this.createValueLabel, this);
@@ -46,6 +48,7 @@
             a.radius = Math.sqrt(a.value) / 2;
             a.x = _this.sourcePoint.x + (Math.random() * 60);
             a.sourceX = a.x;
+            a.sourceY = _this.sourcePoint.y - $(window).height() - (Math.random() * 60);
             return delete a.y;
           });
           _this.data = json;
@@ -66,7 +69,7 @@
         this.baseG = this.svg.append("g").attr("id", "major-categories");
         this.setPosition();
         this.onResize();
-        return this.groups = this.baseG.selectAll(".major").data(this.data).enter().append("g").each(function(d) {
+        this.groups = this.baseG.selectAll(".major").data(this.data).enter().append("g").each(function(d) {
           var g;
           g = d3.select(this);
           g.attr("class", "major");
@@ -75,12 +78,22 @@
           });
           self.createCircle(d, g);
           self.createValueLabel(d, g);
-          return self.createNameLabel(d, g);
+          self.createNameLabel(d, g);
+          return self.createOverLabel(d, g);
         });
+        return this.hide();
       };
 
       MajorCategories.prototype.createCircle = function(d, g) {
-        return g.append("circle").attr("r", d.radius);
+        var _this = this;
+        g.append("circle").attr("r", d.radius);
+        g.on("mouseover", function(e) {
+          _this.baseG[0][0].appendChild(g[0][0]);
+          return g.attr("class", "major hover");
+        });
+        return g.on("mouseout", function(e) {
+          return g.attr("class", "major");
+        });
       };
 
       MajorCategories.prototype.createValueLabel = function(d, g) {
@@ -122,16 +135,34 @@
         return _results;
       };
 
-      MajorCategories.prototype.show = function() {
+      MajorCategories.prototype.createOverLabel = function(d, g) {
+        var rect, rectWidth, text;
+        rect = g.append("rect").attr("class", "overlabel").attr("rx", 7).attr("ry", 7).attr("y", -(d.radius + 25)).attr("height", 20);
+        text = g.append("text").attr("class", "overlabel").text(d.name + " - " + this.roundValue(d.value)).attr("y", -(d.radius + 10));
+        rectWidth = text[0][0].getComputedTextLength() + 28;
+        rect.attr("width", rectWidth).attr("x", -(rectWidth / 2));
+        text.attr("x", -(rectWidth / 2) + 14);
+        return console.log(text[0][0].getComputedTextLength());
+      };
+
+      MajorCategories.prototype.show = function(t) {
         if (!this.loaded) {
           return this.showOnLoad = true;
         }
-        this.currentTransition = "show";
+        if (this.currentTransition === "show") {
+          return;
+        } else {
+          this.currentTransition = "show";
+        }
         return this.force.start();
       };
 
-      MajorCategories.prototype.hide = function() {
-        this.currentTransition = "hide";
+      MajorCategories.prototype.hide = function(t) {
+        if (t === "up") {
+          this.currentTransition = "hide-up";
+        } else {
+          this.currentTransition = "hide";
+        }
         return this.force.start();
       };
 
@@ -145,6 +176,12 @@
           this.groups.each(function(d, i) {
             return d.x = d.x + (d.sourceX - d.x) * e.alpha * 1.1;
           });
+        } else if (this.currentTransition === "hide-up") {
+          this.groups.each(function(d, i) {
+            return d.y = d.y + (d.sourceY - d.y) * e.alpha * 1.1;
+          });
+        } else if (this.currentTransition === "show-down") {
+          this.groups.each(function(d, i) {});
         }
         return this.groups.attr("transform", function(d) {
           return "translate(" + d.x + "," + d.y + ")";
@@ -157,7 +194,6 @@
         middle = this.el.width() / 2;
         rightSide = middle + 512;
         x = rightSide - 610;
-        console.log("newX", x);
         this.setPosition(x, null);
         return this.sourcePoint = {
           x: $(window).width() + 100,
